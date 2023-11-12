@@ -1,48 +1,91 @@
 package clientes;
+
 import java.io.*;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.Socket;
 import java.util.Random;
 
 public class Cliente {
 
-    public static void main(String[] args) {
-        String serverAddress = "127.0.0.1"; // Endereço do servidor
-        int serverPort = 8080; // Porta do servidor
-        Random random = new Random();
+    private String[] tiposRequisicao = {"LEITURA", "ESCRITA"};
+    private String serverAddress;
+    private int serverPort;
+    private Random random;
 
+    public Cliente(String serverAddress, int serverPort) {
+        this.serverAddress = serverAddress;
+        this.serverPort = serverPort;
+        this.random = new Random();
+    }
+
+    public void iniciarEnvioRequisicoes() {
         try {
-            Socket socket = new Socket(serverAddress, serverPort);
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
             while (true) {
-                // Escolha aleatoriamente entre requisição de leitura e escrita
-                boolean isReadRequest = random.nextBoolean();
-                String requestType = isReadRequest ? "Leitura" : "Escrita";
-
-                if (isReadRequest) {
-                    // Requisição de leitura
-                    out.println("LEITURA");
-                } else {
-                    // Requisição de escrita com dois números aleatórios
-                    int num1 = 2 + random.nextInt(999999); // Números entre 2 e 1.000.000
-                    int num2 = 2 + random.nextInt(999999);
-                    out.println("ESCRITA " + num1 + " " + num2);
-                }
-
-                // Aguarde a resposta do servidor
-                String response = in.readLine();
-                System.out.println("Recebido do servidor: " + response);
-
-                // Durma por um tempo aleatório entre 50 e 200 ms
-                int sleepTime = 50 + random.nextInt(151);
-                Thread.sleep(sleepTime);
+                enviarRequisicaoAleatoria();
+                int tempoDeEspera = random.nextInt(151) + 50; // Tempo aleatório entre 50 e 200 ms
+                Thread.sleep(tempoDeEspera);
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Preserve the interrupted status
             e.printStackTrace();
         }
     }
+
+    public void enviarRequisicaoAleatoria() {
+        String tipoRequisicao = tiposRequisicao[random.nextInt(tiposRequisicao.length)];
+        
+        Socket socket = null;
+        PrintWriter out = null;
+        BufferedReader in = null;
+
+        try {
+            System.out.println("Tentando conectar ao servidor para requisição do tipo: " + tipoRequisicao);
+
+            socket = new Socket(serverAddress, serverPort);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            if (tipoRequisicao.equals("LEITURA")) {
+                out.println("LEITURA");
+                String response = in.readLine();
+                System.out.println("Recebido do servidor: " + response);
+            } else if (tipoRequisicao.equals("ESCRITA")) {
+                int num1 = random.nextInt(999999) + 2;
+                int num2 = random.nextInt(999999) + 2;
+
+                out.println("ESCRITA " + num1 + " " + num2);
+                String response = in.readLine();
+                System.out.println("Recebido do servidor: " + response);
+            }
+
+        } catch (IOException e) {
+            System.err.println("Não foi possível conectar ao servidor. Tentando novamente em alguns segundos...");
+            try {
+                Thread.sleep(5000); // Aguardar 5 segundos antes de tentar reconectar
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                ex.printStackTrace();
+            } finally {
+                // Fechar os recursos se estiverem abertos
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                if (out != null) {
+                    out.close();
+                }
+                if (socket != null) {
+                    try {
+                        socket.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
 }
