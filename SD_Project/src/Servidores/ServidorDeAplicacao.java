@@ -90,11 +90,23 @@ public class ServidorDeAplicacao implements Runnable {
 
         private void verificarMDC(int num1, int num2, PrintWriter out) {
             int mdc = calcularMDC(num1, num2);
+            BufferedWriter bw = null;
 
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(NOME_ARQUIVO, true))) {
+            try {
+                bw = new BufferedWriter(new FileWriter(NOME_ARQUIVO, true));
+                bw.write("O MDC entre " + num1 + " e " + num2 + " é " + mdc + ".\n");
                 out.println("O MDC entre " + num1 + " e " + num2 + " é " + mdc + ".");
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                // Certifique-se de fechar o BufferedWriter mesmo em caso de exceção
+                if (bw != null) {
+                    try {
+                        bw.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 

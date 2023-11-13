@@ -1,7 +1,6 @@
 package clientes;
 
 import java.io.*;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Random;
 
@@ -39,9 +38,11 @@ public class Cliente {
         BufferedReader in = null;
 
         try {
-            System.out.println("Tentando conectar ao servidor para requisição do tipo: " + tipoRequisicao);
+        	System.out.println("Tentando conectar ao servidor para requisição do tipo: " + tipoRequisicao);
 
             socket = new Socket(serverAddress, serverPort);
+            System.out.println("Conexão bem-sucedida!"); // Mensagem de depuração
+
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
