@@ -1,0 +1,9 @@
+O MDC entre 636850 e 993854 é 2.
+O MDC entre 116533 e 150421 é 1.
+O MDC entre 233082 e 150065 é 1.
+O MDC entre 274524 e 182029 é 1.
+O MDC entre 233301 e 372882 é 3.
+O MDC entre 389587 e 791631 é 1.
+O MDC entre 892885 e 183613 é 1.
+O MDC entre 664610 e 269279 é 1.
+O MDC entre 143613 e 264376 é 1.

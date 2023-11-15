@@ -1,23 +1,21 @@
+// Cliente.java
 package clientes;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.Random;
 
-public class Cliente {
+public class Cliente implements Runnable {
 
     private String[] tiposRequisicao = {"LEITURA", "ESCRITA"};
-    private String serverAddress;
-    private int serverPort;
     private Random random;
 
-    public Cliente(String serverAddress, int serverPort) {
-        this.serverAddress = serverAddress;
-        this.serverPort = serverPort;
+    public Cliente() {
         this.random = new Random();
     }
 
-    public void iniciarEnvioRequisicoes() {
+    @Override
+    public void run() {
         try {
             while (true) {
                 enviarRequisicaoAleatoria();
@@ -32,60 +30,35 @@ public class Cliente {
 
     public void enviarRequisicaoAleatoria() {
         String tipoRequisicao = tiposRequisicao[random.nextInt(tiposRequisicao.length)];
-        
-        Socket socket = null;
-        PrintWriter out = null;
-        BufferedReader in = null;
 
         try {
-        	System.out.println("Tentando conectar ao servidor para requisição do tipo: " + tipoRequisicao);
+            int balanceadorPort = (random.nextBoolean()) ? 8080 : 8081; // Escolhe aleatoriamente entre 8080 e 8081
+            String balanceadorAddress = "127.0.0.1"; // LocalHost
 
-            socket = new Socket(serverAddress, serverPort);
-            System.out.println("Conexão bem-sucedida!"); // Mensagem de depuração
+            System.out.println("Tentando enviar requisição para o balanceador de carga para o tipo: " + tipoRequisicao);
+            Socket socket = new Socket(balanceadorAddress, balanceadorPort);
+            System.out.println("Conexão com o balanceador de carga bem-sucedida!"); // Mensagem de depuração
 
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            // Remover a leitura imediata da resposta
 
             if (tipoRequisicao.equals("LEITURA")) {
                 out.println("LEITURA");
-                String response = in.readLine();
-                System.out.println("Recebido do servidor: " + response);
+                System.out.println("Requisição de leitura enviada.");
             } else if (tipoRequisicao.equals("ESCRITA")) {
                 int num1 = random.nextInt(999999) + 2;
                 int num2 = random.nextInt(999999) + 2;
 
                 out.println("ESCRITA " + num1 + " " + num2);
-                String response = in.readLine();
-                System.out.println("Recebido do servidor: " + response);
+                System.out.println("Requisição de escrita enviada.");
             }
 
+            // Fechar os recursos após o uso
+            out.close();
+            socket.close();
+
         } catch (IOException e) {
-            System.err.println("Não foi possível conectar ao servidor. Tentando novamente em alguns segundos...");
-            try {
-                Thread.sleep(5000); // Aguardar 5 segundos antes de tentar reconectar
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                ex.printStackTrace();
-            } finally {
-                // Fechar os recursos se estiverem abertos
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-                if (out != null) {
-                    out.close();
-                }
-                if (socket != null) {
-                    try {
-                        socket.close();
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
+            e.printStackTrace();
         }
     }
 

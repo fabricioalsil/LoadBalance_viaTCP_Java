@@ -7,23 +7,28 @@ import java.net.Socket;
 public class ServidorDeAplicacao implements Runnable {
 
     private int porta;
-    private static final String NOME_ARQUIVO = "arquivo.txt";
+    private String NOME_ARQUIVO;
 
-    public ServidorDeAplicacao(int porta) {
+    public ServidorDeAplicacao(int porta, String nome) {
         this.porta = porta;
+        this.NOME_ARQUIVO = nome;
     }
 
-    @Override
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(porta)) {
-            System.out.println("Servidor de Aplicação iniciado na porta " + porta);
+        try {
+            @SuppressWarnings("resource")
+			ServerSocket serverSocket = new ServerSocket(porta); // Porta do servidor
+            System.out.println("Servidor aguardando conexões na porta " + porta + "...");
 
             while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
+                Socket clienteSocket = serverSocket.accept();
+                System.out.println("Conectado: " + clienteSocket);
 
-                // Crie uma nova thread para lidar com a requisição do cliente
-                new Thread(new ClienteHandler(clientSocket)).start();
+                BufferedReader in = new BufferedReader(new InputStreamReader(clienteSocket.getInputStream()));
+                String comando = in.readLine();
+                System.out.println("Envio do cliente: " + comando);
+
+                new Thread(new ClienteHandler(comando)).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -31,45 +36,33 @@ public class ServidorDeAplicacao implements Runnable {
     }
 
     private class ClienteHandler implements Runnable {
-        private Socket clientSocket;
+        private String request;
 
-        public ClienteHandler(Socket clientSocket) {
-            this.clientSocket = clientSocket;
+        public ClienteHandler(String request) {
+            this.request = request;
         }
 
         @Override
         public void run() {
-            try (
-                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
-            ) {
-                String request = in.readLine();
-
+            try {
                 if (request != null) {
                     if (request.equals("LEITURA")) {
                         // Lidar com a requisição de leitura
                         int numLinhas = contarLinhasArquivo();
-                        out.println("O arquivo possui " + numLinhas + " linhas.");
+                        System.out.println("O arquivo possui " + numLinhas + " linhas.");
                     } else if (request.startsWith("ESCRITA")) {
                         // Lidar com a requisição de escrita
                         String[] parts = request.split(" ");
                         if (parts.length == 3) {
                             int num1 = Integer.parseInt(parts[1]);
                             int num2 = Integer.parseInt(parts[2]);
-                            verificarMDC(num1, num2, out);
-                            out.println("O MDC entre " + num1 + " e " + num2 + " é Z."); // Substitua Z pelo valor real
+                            verificarMDC(num1, num2);
                         }
                     }
                 }
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
-            } finally {
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
 
@@ -88,14 +81,13 @@ public class ServidorDeAplicacao implements Runnable {
             return 0;
         }
 
-        private void verificarMDC(int num1, int num2, PrintWriter out) {
+        private void verificarMDC(int num1, int num2) {
             int mdc = calcularMDC(num1, num2);
             BufferedWriter bw = null;
 
             try {
                 bw = new BufferedWriter(new FileWriter(NOME_ARQUIVO, true));
                 bw.write("O MDC entre " + num1 + " e " + num2 + " é " + mdc + ".\n");
-                out.println("O MDC entre " + num1 + " e " + num2 + " é " + mdc + ".");
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {

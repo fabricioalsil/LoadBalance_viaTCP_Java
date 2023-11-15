@@ -6,41 +6,42 @@ import clientes.Cliente;
 
 public class Main {
 
-	public static void main(String[] args) {
-	    // Inicialize os componentes principais
-	    ServidorDeAplicacao servidor1 = new ServidorDeAplicacao(8081); // Porta 8081
-	    ServidorDeAplicacao servidor2 = new ServidorDeAplicacao(8082); // Porta 8082
+    public static void main(String[] args) {
+    	
+    	//Criar servidor com porta 8090
+    	ServidorDeAplicacao servidor8090 = new ServidorDeAplicacao(8090, "arquivo.txt");
+    	
+    	//Criar servidor com porta 8091
+    	ServidorDeAplicacao servidor8091 = new ServidorDeAplicacao(8091, "arquivo2.txt");
+    	
+    	//Criar e iniciar threads para os servidores
+    	Thread servidor8090Thread = new Thread(servidor8090);
+    	Thread servidor8091Thread = new Thread(servidor8091);
+    	
+    	servidor8090Thread.start();
+    	servidor8091Thread.start();
+    	
+        // Criar balanceador de carga com porta 8080
+        BalanceadorDeCarga balanceador8080 = new BalanceadorDeCarga(8080);
 
-	    // Inicie os servidores de aplicação em threads separadas
-	    Thread servidor1Thread = new Thread(servidor1);
-	    Thread servidor2Thread = new Thread(servidor2);
-	    servidor1Thread.start();
-	    servidor2Thread.start();
+        // Criar balanceador de carga com porta 8081
+        BalanceadorDeCarga balanceador8081 = new BalanceadorDeCarga(8081);
 
-	    // Aguarde alguns segundos para garantir que os servidores estejam inicializados
-	    try {
-	        Thread.sleep(5000); // Aguarde 5 segundos
-	    } catch (InterruptedException e) {
-	        Thread.currentThread().interrupt();
-	        e.printStackTrace();
-	    }
+        // Criar e iniciar threads para os balanceadores
+        Thread balanceador8080Thread = new Thread(balanceador8080);
+        Thread balanceador8081Thread = new Thread(balanceador8081);
 
-	    // Inicie o balanceador e o cliente em threads separadas
-	    BalanceadorDeCarga balanceador = new BalanceadorDeCarga();
-	    Cliente cliente = new Cliente("127.0.0.1", 8081); // Conecta-se ao balanceador de carga
+        balanceador8080Thread.start();
+        balanceador8081Thread.start();
 
-	    Thread balanceadorThread = new Thread(balanceador);
-	    balanceadorThread.start();
+        // Criar e iniciar threads para os clientes
+        Thread clienteThread1 = new Thread(new Cliente());
+        Thread clienteThread2 = new Thread(new Cliente());
 
-	    try {
-	        while (true) {
-	            // Simule requisições de leitura e escrita do cliente
-	            cliente.enviarRequisicaoAleatoria();
-	            Thread.sleep(500); // Aguarde meio segundo entre as requisições (simulação)
-	        }
-	    } catch (InterruptedException e) {
-	        e.printStackTrace();
-	    }
-	}
-
+        clienteThread1.start();
+        clienteThread2.start();
+    }
 }
+
+
+
